@@ -31,6 +31,11 @@ class MainActivity : AppCompatActivity() {
             //Calendarクラスのインスタンスである変数calendarをsetAlarmManagerに渡している。
             setAlarmManager(calendar)
         }
+
+        cancelAlarm.setOnClickListener{
+            cancelAlarmManager()
+        }
+
     }
 
     private fun setAlarmManager(calendar: Calendar) {
@@ -43,18 +48,38 @@ class MainActivity : AppCompatActivity() {
         //リクエスコードやフラグは今回仕様ないのであれば,0を渡しておく。
         val pending = PendingIntent.getBroadcast(this, 0, intent, 0)
         when {
+            //Lollipop以上では、AlarmManage.AlarmClockInfoクラスのインスタンスを用意して、
+            //設定するアラームの時刻とアラーム設定のためのインテントを指定する。今回はアラーム設定のためのインテントを使用しないので、第2引数にはnullを渡す。
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP -> {
                 val info = AlarmManager.AlarmClockInfo(
                     calendar.timeInMillis, null)
+                //AlarmManager.AlarmClockInfoのインスタンスである変数infoをsetAlarmClockメソッドに渡す。
+                //setAlarmClockメソッドでアラームを設定している。第1引数がアラーム情報で、第2引数がアラーム時刻になった時に実行するインテント。
                 am.setAlarmClock(info, pending)
             }
+            //API19から、それ以前に使用されていたsetメソッドによるアラームは正確ではなく、遅延して通知されるようになった。
+            //そのためset代わりに、setExactを使用する。
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT -> {
+                //アラームのタイプには、RTC_WAKEUPを渡し、デバイスオフの場合にはデバイスを起動するようにしている。
+                //setExactメソッドはアラームが正確に配信されるようにスケジュールします。第1引数がアラームのタイプ,
+                // 第2引数が設定するアラームの時刻,第3引数がアラーム実行になった時に実行するインテント。
                 am.setExact(AlarmManager.RTC_WAKEUP,calendar.timeInMillis, pending)
             }
             else -> {
+                ////それ以前の場合の処理。setメソッドを使っている。使い方はsetExactと同じ
                 am.set(AlarmManager.RTC_WAKEUP,
                 calendar.timeInMillis, pending)
             }
         }
     }
+
+    //ペンディングインテントを取得するまでの処理は、アラーム登録の時と同じ。アラームキャンセルするにはAlarmManagerのcancelメソッドを使う。
+    private fun cancelAlarmManager() {
+        val am = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(this, AlarmBroadcastReceiver::class.java)
+        val pending = PendingIntent.getBroadcast(this, 0, intent, 0)
+        //引数にはキャンセルしたいインテントと同じものを渡す。//cancelメソッドはintentに一致するアラームを全て削除する。
+        am.cancel(pending)
+    }
+
 }
