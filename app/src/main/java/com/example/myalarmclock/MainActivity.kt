@@ -7,14 +7,41 @@ import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Parcel
+import android.os.Parcelable
+import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity() : AppCompatActivity(), TimeAlertDialog.Listener, Parcelable {
+    constructor(parcel: Parcel) : this() {
+    }
 
+    //getUpメソッドは、ダイアログで「起きる」ボタンが押された時に呼ばれる。
+    override fun getUp() {
+        //finishメソッドでアクティビティを閉じる。
+        finish()
+    }
 
+    //snoozeメソッドは、ダイアログで「あと5分」ボタンが押された時に呼ばれる。ここではToastを使って後5分がクリックされましたというメッセージを表示している。
+    override fun snooze() {
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = System.currentTimeMillis()
+        calendar.add(Calendar.MINUTE, 5)
+        setAlarmManager(calendar)
+        finish()
+
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        //インテントのエクストラとして"onReceive"にtrueが指定されているかチェックしています。
+        //アクティビティの起動に使用されたインテントの取得はgetIntentメソッドで行いますが、Kotlinではintentプロパティが利用できます。
+        if (intent?.getBooleanExtra("onReceive", false) == true) {
+            //TimeAlertDialogのインスタンスを生成し、showメソッドで表示している。
+            val dialog = TimeAlertDialog()
+            dialog.show(supportFragmentManager, "alert_dialog")
+        }
+
         setContentView(R.layout.activity_main)
 
 
@@ -80,6 +107,24 @@ class MainActivity : AppCompatActivity() {
         val pending = PendingIntent.getBroadcast(this, 0, intent, 0)
         //引数にはキャンセルしたいインテントと同じものを渡す。//cancelメソッドはintentに一致するアラームを全て削除する。
         am.cancel(pending)
+    }
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<MainActivity> {
+        override fun createFromParcel(parcel: Parcel): MainActivity {
+            return MainActivity(parcel)
+        }
+
+        override fun newArray(size: Int): Array<MainActivity?> {
+            return arrayOfNulls(size)
+        }
     }
 
 }

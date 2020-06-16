@@ -11,10 +11,16 @@ import android.widget.Toast
 class AlarmBroadcastReceiver : BroadcastReceiver() {
     //onReceiveメソッドはブロードキャストインテントを受け取った時に呼ばれる。
     override fun onReceive(context: Context, intent: Intent) {
-        //onReceive内には通知を受け取った時の処理を記述。
-        //Toastクラスを使ってウィンドウの前面に一定期間メッセージを表示させている。
-        //Toastクラスの通常の使い方は、makeTextメソッドで表示内容を定義し、showメソッドで表示します。
-        Toast.makeText(context, "アラームを受信しました", Toast.LENGTH_SHORT)
-            .show()
+        //アクティビティを呼ぶためのインテントを作成。
+        val mainIntent = Intent(context, MainActivity::class.java)
+        //　ここで設定しているエクストラは、アクティビティがBroadcastReceiverから起動されたことがわかるようにするための情報。キー名は任意で、ここでは"onReceive"としている
+            .putExtra("onReceive", true)
+            //アクティビティから他のアクティビティを開く場合と違い、BroadcastReceiverからアクティビティを呼び出すには、インテントにIntent.FLAG_ACTIVITY_NEW_TASKフラグを
+            //つけておく必要がある。このフラグはラスクがスタックに存在しても新しいタスクとしてアクティビティを起動するためのものですが、
+            //今回はタスクやスタックについては深く考えず、決まりだと考える。
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        //最後にアクティビティを起動しますが、ここはActivityクラスの中ではないので、onReciveメソッドに渡されるContextを使って、startActivityメソッドを実行します。
+        context.startActivity(mainIntent)
+
     }
 }
